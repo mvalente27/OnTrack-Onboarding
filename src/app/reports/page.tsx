@@ -4,17 +4,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Loader2, User, Clock } from 'lucide-react';
 import type { Project, AppUser } from '../../lib/types';
-import { getProjectsAzure, getUsersAzure } from '@/lib/azure/cosmos';
-// TODO: Implement Azure Cosmos DB logic for fetching projects and users
+import { getProjectsAzure, getUsersAzure } from '../../lib/azure/cosmos';
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../hooks/use-toast';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
-import { UserWorkloadChart } from '@/components/reports/user-workload-chart';
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../../components/ui/card';
+import UserWorkloadChart from '../../components/reports/user-workload-chart';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/table';
+import { Badge } from '../../components/ui/badge';
 import { getCurrentStageName } from '../../lib/onboarding';
 import { formatDistanceToNow } from 'date-fns';
-import { PermissionDenied } from '@/components/auth/permission-denied';
+import { PermissionDenied } from '../../components/auth/permission-denied';
 
 export default function ReportsPage() {
   const { appUser, hasPermission } = useAuth();
@@ -31,11 +30,11 @@ export default function ReportsPage() {
       }
       setIsLoading(true);
       try {
-        const accessibleProjectTypeIds = hasPermission('manage_all') ? undefined : appUser.role?.projectTypeIds;
-        const [fetchedProjects, fetchedUsers] = await Promise.all([
-            getProjects(appUser.companyId, accessibleProjectTypeIds),
-            getUsers(appUser.companyId)
-        ]);
+  const accessibleProjectTypeIds = hasPermission() ? undefined : appUser.role?.projectTypeIds;
+    const [fetchedProjects, fetchedUsers] = await Promise.all([
+      getProjectsAzure(appUser.companyId, accessibleProjectTypeIds),
+      getUsersAzure(appUser.companyId)
+    ]);
         setProjects(fetchedProjects);
         setUsers(fetchedUsers);
       } catch (error) {
@@ -97,7 +96,7 @@ export default function ReportsPage() {
   }
   
   // A generic permission check could be added here, e.g. 'view_reports'
-  if (!hasPermission('view_projects')) {
+  if (!hasPermission()) {
       return <PermissionDenied />
   }
 
@@ -149,7 +148,7 @@ export default function ReportsPage() {
                         projectsOverviewData.map(project => (
                         <TableRow key={project.id}>
                             <TableCell className="font-medium">{project.name}</TableCell>
-                            <TableCell><Badge variant="outline">{project.projectTypeName}</Badge></TableCell>
+                            <TableCell><Badge>{project.projectTypeName}</Badge></TableCell>
                             <TableCell>{project.currentStage}</TableCell>
                             <TableCell className="flex items-center"><User className="mr-2 h-4 w-4 text-muted-foreground"/>{project.assignedUser}</TableCell>
                             <TableCell className="flex items-center"><Clock className="mr-2 h-4 w-4 text-muted-foreground"/>{project.age}</TableCell>

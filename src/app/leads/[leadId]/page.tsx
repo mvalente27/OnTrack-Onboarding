@@ -5,15 +5,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 // TODO: Refactor to use Azure services
 import type { ChecklistTemplate, ChecklistItem, Lead } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
+import {
+  getLeadAndTemplateAzure,
+  updateLeadDataAzure
+} from '../../lib/azure/cosmos';
+import { useToast } from '@/hooks';
 import { Loader2, Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
+import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Label, Input, Textarea, Checkbox, Separator } from '@/components/ui';
 
 function renderFormControl(item: ChecklistItem, value: any, onChange: (value: any) => void) {
   const props = {
@@ -38,7 +36,7 @@ function renderFormControl(item: ChecklistItem, value: any, onChange: (value: an
           <Checkbox
             id={item.id}
             checked={!!value}
-            onCheckedChange={(checked) => onChange(checked)}
+            onCheckedChange={(checked: boolean) => onChange(checked)}
           />
           <Label htmlFor={item.id} className="text-sm font-medium leading-none">
             {item.label}
@@ -68,13 +66,13 @@ export default function LeadFormPage() {
 
     const fetchLeadInfo = async () => {
       try {
-        const result = await getLeadAndTemplate(leadId);
+          const result = await getLeadAndTemplateAzure(leadId);
         if (result) {
           setLead(result.lead);
           setTemplate(result.template);
           
           const initialData: Record<string, any> = {};
-          result.template.items.forEach(item => {
+          result.template.items.forEach((item: ChecklistItem) => {
              initialData[item.label] = result.lead[item.label as keyof Lead] || (item.type === 'checkbox' ? false : '');
           });
           setFormData(initialData);
@@ -100,7 +98,7 @@ export default function LeadFormPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-        await updateLeadData(leadId, formData);
+          await updateLeadDataAzure(leadId, formData);
         setIsSubmitted(true);
     } catch(error) {
         console.error('Failed to submit form', error);
@@ -157,7 +155,7 @@ export default function LeadFormPage() {
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-8">
-                    {template.items.map(item => (
+                    {template.items.map((item: ChecklistItem) => (
                          <div key={item.id} className="grid grid-cols-1 gap-2">
                             {item.type !== 'checkbox' && <Label htmlFor={item.id} className="text-base">{item.label}</Label>}
                             {renderFormControl(item, formData[item.label], (value) => handleInputChange(item.label, value))}

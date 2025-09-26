@@ -3,17 +3,20 @@
 'use client';
 
 import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { Button, Select, SelectContent, SelectItem, SelectTrigger, SelectValue, Label } from '@/components/ui';
 import { PlusCircle, Loader2, Wand2 } from 'lucide-react';
 import React, { useEffect, useCallback, useTransition } from 'react';
 import type { ChecklistItem, ChecklistTemplate, Role, ProjectType } from '@/lib/types';
-import { useToast } from '@/hooks/use-toast';
-// TODO: Refactor to use Azure services
+import { useToast } from '@/hooks';
+import {
+  getTemplateAzure,
+  getRolesAzure,
+  getProjectTypesAzure,
+  updateTemplateAzure
+} from '@/lib/azure/cosmos';
 import { TemplateItem } from './template-item';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { useAuth } from '@/context/auth-context';
-import { suggestChecklistItems } from '@/ai/flows/suggest-checklist-items-flow';
+import { useAuth } from '@/context';
+import { suggestChecklistItemsFlow } from '@/ai/flows/suggest-checklist-items-flow';
 
 
 export default function TemplateDetailPage() {
@@ -38,9 +41,9 @@ export default function TemplateDetailPage() {
     setIsLoading(true);
     try {
       const [currentTemplate, fetchedRoles, fetchedProjectTypes] = await Promise.all([
-        getTemplate(templateId),
-        getRoles(appUser.companyId),
-        getProjectTypes(appUser.companyId),
+        getTemplateAzure(templateId),
+        getRolesAzure(appUser.companyId),
+        getProjectTypesAzure(appUser.companyId),
       ]);
       
       if (currentTemplate) {
@@ -92,8 +95,8 @@ export default function TemplateDetailPage() {
     if (!template) return;
     startSuggestionTransition(async () => {
         try {
-            const result = await suggestChecklistItems({ templateName: template.name });
-            const suggestedItems = result.items.map(item => ({
+            const result = await suggestChecklistItemsFlow({ templateName: template.name });
+            const suggestedItems = result.items.map((item: any) => ({
                 ...item,
                 id: `item-${Date.now()}-${Math.random()}`,
                 roleId: '',
@@ -144,7 +147,7 @@ export default function TemplateDetailPage() {
     }
     setIsSaving(true);
     try {
-      await updateTemplate(templateId, items, selectedProjectTypeId);
+  await updateTemplateAzure(templateId, items, selectedProjectTypeId);
       toast({
         title: 'Template Saved!',
         description: 'Your changes have been successfully saved.',

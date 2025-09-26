@@ -40,7 +40,7 @@ const Logo = () => (
 
 export function AppSidebar() {
   const pathname = usePathname();
-  const { signOutUser, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
   const isActive = (path: string) => pathname.startsWith(path) && (pathname !== '/' || path === '/');
 
   return (

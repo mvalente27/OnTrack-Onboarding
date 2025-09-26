@@ -1,8 +1,7 @@
 
 // src/app/roles/page.tsx
 
-'use client';
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
@@ -14,29 +13,21 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import {
-  Table,
-  TableHeader,
-  TableRow,
-  TableHead,
-  TableBody,
-  TableCell,
-} from '@/components/ui/table';
+} from '../../components/ui/alert-dialog';
+import { Button } from '../../components/ui/button';
+import { Card, CardContent } from '../../components/ui/card';
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '../../components/ui/table';
 import { MoreHorizontal, Loader2, Trash2, Edit } from 'lucide-react';
 import type { Role } from '../../lib/types';
-// TODO: Refactor to use Azure services
 import { useToast } from '../../hooks/use-toast';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { NewRoleDialog } from '@/components/roles/new-role-dialog';
-import { Badge } from '@/components/ui/badge';
+  getRolesAzure,
+  createRoleAzure,
+  deleteRoleAzure
+} from '../../lib/azure/cosmos';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
+import { NewRoleDialog } from '../../components/roles/new-role-dialog';
+import { Badge } from '../../components/ui/badge';
 import { useAuth } from '../../context/auth-context';
 
 export default function RolesPage() {
@@ -52,7 +43,7 @@ export default function RolesPage() {
     if (!appUser?.companyId) return;
     setIsLoading(true);
     try {
-      let fetchedRoles = await getRoles(appUser.companyId);
+  let fetchedRoles = await getRolesAzure(appUser.companyId);
       setRoles(fetchedRoles);
     } catch (error) {
       console.error('Failed to fetch roles', error);
@@ -75,7 +66,7 @@ export default function RolesPage() {
   const handleCreateRole = async (name: string) => {
     if (!appUser?.companyId) return;
     try {
-      await createRole(appUser.companyId, name, []); // Create with no permissions initially
+  await createRoleAzure(appUser.companyId, name, []); // Create with no permissions initially
       toast({
         title: 'Role Created!',
         description: `Successfully created the "${name}" role.`,
@@ -95,7 +86,7 @@ export default function RolesPage() {
     if (!roleToDelete) return;
     setIsDeleting(true);
     try {
-      await deleteRole(roleToDelete.id);
+  await deleteRoleAzure(roleToDelete.id);
       toast({
         title: 'Role Deleted',
         description: `Successfully deleted the "${roleToDelete.name}" role.`,
@@ -161,20 +152,20 @@ export default function RolesPage() {
                           <div className="flex flex-wrap gap-1">
                             {role.permissions && role.permissions.length > 0 ? (
                               role.permissions[0] === 'manage_all' ? (
-                                <Badge variant="default">Full Access</Badge>
+                                <Badge>Full Access</Badge>
                               ) : (
-                                role.permissions.slice(0, 5).map(p => <Badge variant="secondary" key={p}>{p.replace(/_/g, ' ')}</Badge>)
+                                role.permissions.slice(0, 5).map(p => <Badge key={p}>{p.replace(/_/g, ' ')}</Badge>)
                               )
                             ) : (
                                 <span className="text-muted-foreground text-sm">No permissions</span>
                             )}
-                            {role.permissions && role.permissions.length > 5 && <Badge variant="outline">...</Badge>}
+                            {role.permissions && role.permissions.length > 5 && <Badge>...</Badge>}
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon">
+                              <Button>
                                 <MoreHorizontal />
                               </Button>
                             </DropdownMenuTrigger>
@@ -204,7 +195,7 @@ export default function RolesPage() {
       </main>
       <AlertDialog
         open={!!roleToDelete}
-        onOpenChange={open => !open && setRoleToDelete(null)}
+  onOpenChange={(open: boolean) => !open && setRoleToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>

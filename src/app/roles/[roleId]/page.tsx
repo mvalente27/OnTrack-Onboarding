@@ -3,16 +3,13 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle, Checkbox, Label } from '../../components/ui';
 import { Loader2, ArrowLeft, Save } from 'lucide-react';
-import type { Role, Permission, ProjectType } from '@/lib/types';
+import type { Role, Permission, ProjectType } from '../../lib/types';
 // TODO: Refactor to use Azure services
-import { useToast } from '@/hooks/use-toast';
-import { availablePermissions, permissionCategories } from '@/lib/permissions';
-import { useAuth } from '@/context/auth-context';
+import { useToast } from '../../hooks';
+import { availablePermissions, permissionCategories } from '../../lib/permissions';
+import { useAuth } from '../../context';
 
 export default function RoleDetailPage() {
   const params = useParams();
@@ -24,7 +21,7 @@ export default function RoleDetailPage() {
   const [role, setRole] = useState<Role | null>(null);
   const [projectTypes, setProjectTypes] = useState<ProjectType[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<Record<Permission, boolean>>(() => {
-    return availablePermissions.reduce((acc, perm) => {
+  return availablePermissions.reduce((acc: any, perm: any) => {
         acc[perm] = false;
         return acc;
     }, {} as Record<Permission, boolean>);
@@ -39,8 +36,8 @@ export default function RoleDetailPage() {
     setIsLoading(true);
     try {
         const [fetchedRole, fetchedProjectTypes] = await Promise.all([
-          getRole(roleId),
-          getProjectTypes(appUser.companyId)
+          getRoleAzure(roleId),
+          getProjectTypesAzure(appUser.companyId)
         ]);
 
         setProjectTypes(fetchedProjectTypes);
@@ -48,17 +45,17 @@ export default function RoleDetailPage() {
         if (fetchedRole) {
             setRole(fetchedRole);
             const initialPermissions = { ...selectedPermissions };
-            (fetchedRole.permissions || []).forEach(p => {
-                if (p in initialPermissions) {
-                    initialPermissions[p] = true;
-                }
-            });
+      (fetchedRole.permissions || []).forEach((p: any) => {
+        if (p in initialPermissions) {
+          initialPermissions[p] = true;
+        }
+      });
             setSelectedPermissions(initialPermissions);
 
             const initialProjectTypeIds: Record<string, boolean> = {};
-            fetchedProjectTypes.forEach(pt => {
-                initialProjectTypeIds[pt.id] = (fetchedRole.projectTypeIds || []).includes(pt.id);
-            });
+      fetchedProjectTypes.forEach((pt: any) => {
+        initialProjectTypeIds[pt.id] = (fetchedRole.projectTypeIds || []).includes(pt.id);
+      });
             setSelectedProjectTypeIds(initialProjectTypeIds);
 
         } else {
@@ -152,7 +149,7 @@ export default function RoleDetailPage() {
                                       <Checkbox
                                           id={permission}
                                           checked={selectedPermissions[permission]}
-                                          onCheckedChange={(checked) => handlePermissionChange(permission, !!checked)}
+                                          onCheckedChange={(checked: boolean) => handlePermissionChange(permission, !!checked)}
                                           disabled={isSaving}
                                       />
                                       <Label htmlFor={permission} className="font-normal capitalize">
@@ -177,7 +174,7 @@ export default function RoleDetailPage() {
                         <Checkbox
                             id={`pt-${pt.id}`}
                             checked={selectedProjectTypeIds[pt.id]}
-                            onCheckedChange={(checked) => handleProjectTypeChange(pt.id, !!checked)}
+                            onCheckedChange={(checked: boolean) => handleProjectTypeChange(pt.id, !!checked)}
                             disabled={isSaving}
                         />
                         <Label htmlFor={`pt-${pt.id}`} className="font-normal">

@@ -11,14 +11,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from '../components/ui/alert-dialog';
 import { Loader2 } from 'lucide-react';
 import type { ChecklistTemplate, ChecklistItem } from '../lib/types';
-// Removed legacy Firebase import
 import { useToast } from '../hooks/use-toast';
 import { NewTemplateDialog } from './checklist-builder/new-template-dialog';
 import { TemplateCard } from './checklist-builder/template-card';
 import { useAuth } from '../context/auth-context';
+import {
+  getTemplatesAzure,
+  createTemplateAzure,
+  deleteTemplateAzure
+} from '../lib/azure/cosmos';
 
 export function ChecklistBuilderPage() {
   const { appUser } = useAuth();
@@ -34,7 +38,7 @@ export function ChecklistBuilderPage() {
       if (!appUser?.companyId) return; // Wait for companyId
       setIsLoading(true);
       try {
-        let fetchedTemplates = await getTemplates(appUser.companyId);
+        let fetchedTemplates = await getTemplatesAzure(appUser.companyId);
 
         if (fetchedTemplates.length === 0) {
           toast({ title: 'No templates found.', description: 'Creating a default template for you.' });
@@ -59,8 +63,8 @@ export function ChecklistBuilderPage() {
   const handleCreateTemplate = async (name: string) => {
     if (!appUser?.companyId) return;
     try {
-      await createTemplate(appUser.companyId, name);
-      const fetchedTemplates = await getTemplates(appUser.companyId);
+  await createTemplateAzure(appUser.companyId, name);
+  const fetchedTemplates = await getTemplatesAzure(appUser.companyId);
       setTemplates(fetchedTemplates);
       toast({
         title: 'Template Created!',
@@ -80,7 +84,7 @@ export function ChecklistBuilderPage() {
     if (!templateToDelete) return;
     setIsDeleting(true);
     try {
-      await deleteTemplate(templateToDelete.id);
+  await deleteTemplateAzure(templateToDelete.id);
       setTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
       toast({
         title: 'Template Deleted',
@@ -143,7 +147,7 @@ export function ChecklistBuilderPage() {
       
       <AlertDialog
         open={!!templateToDelete}
-        onOpenChange={open => !open && setTemplateToDelete(null)}
+  onOpenChange={(open: boolean) => !open && setTemplateToDelete(null)}
       >
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -7,11 +7,11 @@ import type { Project, AppUser } from '../../lib/types';
 // TODO: Refactor to use Azure services
 import { useAuth } from '../../context/auth-context';
 import { useToast } from '../../hooks/use-toast';
-import { Card } from '@/components/ui/card';
-import { OnboardingTracker } from '@/components/onboarding-tracker';
-import { Button } from '@/components/ui/button';
+import { Card } from '../../components/ui/card';
+import { OnboardingTracker } from '../../components/onboarding-tracker';
+import { Button } from '../../components/ui/button';
 import { useRouter } from 'next/navigation';
-import { CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '@/components/ui/card';
+import { CardHeader, CardTitle, CardContent, CardFooter, CardDescription } from '../../components/ui/card';
 import { getCurrentStageName } from '../../lib/onboarding';
 
 
@@ -52,7 +52,7 @@ export default function MyTasksPage() {
       try {
         // Admins can see all projects, others see projects based on their role's projectTypeIds
         const accessibleProjectTypeIds = hasPermission('manage_all') ? undefined : appUser.role?.projectTypeIds;
-        const fetchedProjects = await getProjects(appUser.companyId, accessibleProjectTypeIds);
+  const fetchedProjects = await getProjectsAzure(appUser.companyId, accessibleProjectTypeIds);
         setProjects(fetchedProjects);
       } catch (error) {
         console.error('Failed to fetch data', error);

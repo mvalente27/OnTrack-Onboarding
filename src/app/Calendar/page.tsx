@@ -4,12 +4,13 @@
 import React, { useEffect, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from '../../context/auth-context';
 // TODO: Refactor to use Azure services
-import type { Lead, Project } from '@/lib/types';
+import type { Lead, Project } from '../../lib/types';
+import { getLeadsAzure, getProjectsAzure } from '../../lib/azure/cosmos';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '../../hooks/use-toast';
 import type { EventSourceInput } from '@fullcalendar/core';
 
 export default function CalendarPage() {
@@ -27,12 +28,12 @@ export default function CalendarPage() {
       }
       setIsLoading(true);
       try {
-        const accessibleProjectTypeIds = hasPermission('manage_all') ? undefined : appUser.role?.projectTypeIds;
+  const accessibleProjectTypeIds = hasPermission() ? undefined : appUser.role?.projectTypeIds;
 
-    const [fetchedLeads, fetchedProjects] = await Promise.all([
-      getLeadsAzure(appUser.companyId, accessibleProjectTypeIds),
-      getProjectsAzure(appUser.companyId, accessibleProjectTypeIds)
-    ]);
+      const [fetchedLeads, fetchedProjects] = await Promise.all([
+        await getLeadsAzure(appUser.companyId, accessibleProjectTypeIds),
+        await getProjectsAzure(appUser.companyId, accessibleProjectTypeIds)
+      ]);
 
     const leadEvents = fetchedLeads.map((lead: Lead) => ({
       title: `Lead: ${lead.clientName}`,
@@ -70,8 +71,7 @@ export default function CalendarPage() {
         console.error('Failed to fetch calendar data:', error);
         toast({
           title: 'Error Loading Data',
-          description: 'Could not fetch data for the calendar.',
-          variant: 'destructive',
+          description: 'Could not fetch data for the calendar.'
         });
       } finally {
         setIsLoading(false);

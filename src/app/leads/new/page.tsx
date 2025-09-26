@@ -3,17 +3,19 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button, Card, CardContent, CardHeader, CardTitle, CardDescription, Label, Input, Textarea, Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui';
 import { Loader2, ArrowLeft } from 'lucide-react';
 // TODO: Refactor to use Azure services
-import type { ChecklistTemplate, LeadSource, ProjectType } from '../../lib/types';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
+import type { ChecklistTemplate, LeadSource, ProjectType } from '@/lib/types';
+import {
+  getProjectTypesAzure,
+  getLeadSourcesAzure,
+  getTemplatesAzure,
+  createLeadAzure,
+  createProjectAzure
+} from '@/lib/azure/cosmos';
+import { useToast } from '@/hooks';
+import { useAuth } from '@/context';
 
 export default function NewItemPage() {
   const router = useRouter();
@@ -43,9 +45,9 @@ export default function NewItemPage() {
       setIsLoading(true);
       try {
         const [fetchedProjectTypes, fetchedLeadSources, fetchedTemplates] = await Promise.all([
-          getProjectTypes(appUser.companyId),
-          getLeadSources(appUser.companyId),
-          getTemplates(appUser.companyId)
+          getProjectTypesAzure(appUser.companyId),
+          getLeadSourcesAzure(appUser.companyId),
+          getTemplatesAzure(appUser.companyId)
         ]);
         setProjectTypes(fetchedProjectTypes);
         setLeadSources(fetchedLeadSources);
@@ -84,7 +86,7 @@ export default function NewItemPage() {
 
     setIsSubmitting(true);
     try {
-      await createLead({
+  await createLeadAzure({
         companyId: appUser.companyId,
         projectTypeId: selectedProjectTypeId,
         templateId: linkedTemplate.id,
@@ -203,7 +205,7 @@ export default function NewItemPage() {
                         id="itemName" 
                         placeholder={selectedProjectType?.isSales ? 'Enter client name' : 'Enter project name'}
                         value={itemName} 
-                        onChange={e => setItemName(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setItemName(e.target.value)}
                         required
                       />
                     </div>
@@ -214,7 +216,7 @@ export default function NewItemPage() {
                         type="email"
                         placeholder="Enter contact email"
                         value={email}
-                        onChange={e => setEmail(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
                         required={selectedProjectType?.isSales}
                       />
                     </div>
@@ -251,7 +253,7 @@ export default function NewItemPage() {
                           type="number"
                           placeholder="e.g. 50"
                           value={unitCount || ''}
-                          onChange={e => setUnitCount(e.target.value ? parseInt(e.target.value, 10) : undefined)}
+                          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUnitCount(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                         />
                       </div>
                     </div>
@@ -264,7 +266,7 @@ export default function NewItemPage() {
                         id="notes" 
                         placeholder="Add any relevant notes..."
                         value={notes}
-                        onChange={e => setNotes(e.target.value)}
+                        onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setNotes(e.target.value)}
                       />
                     </div>
                   </div>
